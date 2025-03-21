@@ -1,7 +1,6 @@
 package src
 
 import (
-	"DMDS25/src"
 	"bytes"
 	"errors"
 	"os"
@@ -9,7 +8,7 @@ import (
 )
 
 type MockBufferManager struct {
-	src.IBufferManager
+	IBufferManager
 	Pages       [3][]byte
 	dir         string
 	memory      uint64
