@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"strconv"
+	"strings"
 )
 
 /*
@@ -43,10 +45,11 @@ type IBufferManager interface {
 }
 
 type BufferManager struct {
-	Pages       [10]Page
-	dir         string
-	memory      uint64
-	tmpFileData []byte
+	Pages        [10]Page
+	dir          string
+	memory       uint64
+	tmpFileData  []byte
+	openFileName string
 }
 
 func CreateNewBufferManager(dir string, memory uint64) (IBufferManager, error) {
@@ -56,6 +59,7 @@ func CreateNewBufferManager(dir string, memory uint64) (IBufferManager, error) {
 func (bm *BufferManager) Open(fileID string) error {
 	dat, err := os.ReadFile(bm.dir + fileID)
 	bm.tmpFileData = dat
+	bm.openFileName = fileID
 	return err
 }
 
@@ -65,6 +69,7 @@ func (bm *BufferManager) Close() error {
 
 	} else {
 		bm.tmpFileData = nil
+		bm.openFileName = ""
 		return nil
 	}
 }
@@ -115,14 +120,79 @@ func (bm *BufferManager) Unpin(pageID uint64) error {
 deserialize the byte values currently present in the tmpFileData or throw an error
 */
 func (bm *BufferManager) deserialize() (Page, error) {
-	//TODO implement the deserialize part
-	return Page{}, nil
+
+	stringArray := strings.Split(string(bm.tmpFileData), ";")
+
+	if bm.tmpFileData == nil || bm.openFileName == "" {
+		if len(stringArray) != 13 {
+			return Page{}, errors.New("deserialization failed, there is no open file")
+		}
+	}
+
+	if len(stringArray) != 13 {
+		return Page{}, errors.New("deserialization failed, the file does not contain 13 elements")
+	}
+
+	// init the tmp arrays
+	keys := [6]uint64{}
+	values := [7]uint64{}
+
+	// read the keys
+	for i := 0; i < 6; i++ {
+		if stringArray[i] != "" {
+			keys[i], _ = strconv.ParseUint(stringArray[i], 10, 64)
+		} else {
+			values[i] = 0
+		}
+	}
+
+	// read the values
+	offset := 6
+	for i := 0; i < 7; i++ {
+		index := offset + i
+		if stringArray[index] != "" {
+			keys[index], _ = strconv.ParseUint(stringArray[index], 10, 64)
+		} else {
+			values[index] = 0
+		}
+	}
+	return Page{Keys: keys, Values: values, Name: bm.openFileName}, nil
 }
 
 /*
 deserialize the byte values currently present in the tmpFileData or throw an error
 */
 func (bm *BufferManager) serialize(pageID uint64) error {
-	//TODO implement the serialize part
+	page := bm.Pages[pageID]
+
+	var outputString string = ""
+
+	for i := 0; i < len(page.Keys); i++ {
+		if tmpKey := page.Keys[i]; tmpKey != 0 {
+			outputString = outputString + strconv.FormatUint(uint64(page.Keys[i]), 10)
+		}
+		outputString = outputString + ";"
+	}
+
+	for i := 0; i < len(page.Values); i++ {
+		if tmpValue := page.Values[i]; tmpValue != 0 {
+			outputString = outputString + strconv.FormatUint(uint64(page.Keys[i]), 10)
+		}
+		outputString = outputString + ";"
+	}
+	file, err := os.Open(bm.dir + page.Name)
+	if err != nil {
+		log.Fatalf("An error occured while opening the file: %s", err)
+	}
+	err = file.Truncate(0)
+	if err != nil {
+		log.Fatalf("An error occured while truncating file: %s", err)
+	}
+	_, err = file.Write([]byte(outputString))
+	if err != nil {
+		log.Fatalf("An error occured while writing to file: %s", err)
+	}
+
+	_ = file.Close()
 	return nil
 }
