@@ -52,7 +52,7 @@ type BufferManager struct {
 	openFileName string
 }
 
-func CreateNewBufferManager(dir string, memory uint64) (IBufferManager, error) {
+func CreateNewBufferManager(dir string, memory uint64) (*BufferManager, error) {
 	return &(BufferManager{dir: dir, memory: memory}), nil
 }
 
@@ -151,9 +151,9 @@ func (bm *BufferManager) deserialize() (Page, error) {
 	for i := 0; i < 7; i++ {
 		index := offset + i
 		if stringArray[index] != "" {
-			keys[index], _ = strconv.ParseUint(stringArray[index], 10, 64)
+			values[i], _ = strconv.ParseUint(stringArray[index], 10, 64)
 		} else {
-			values[index] = 0
+			values[i] = 0
 		}
 	}
 	return Page{Keys: keys, Values: values, Name: bm.openFileName}, nil
