@@ -1,7 +1,5 @@
 package src
 
-import "log"
-
 type Loader struct{}
 
 /*
@@ -11,7 +9,7 @@ Each page has a seperate file with an id as the name
 func (l *Loader) Load(name string, manager *BufferManager) (*BTree, error) {
 	id, err := manager.Pin(name, 0)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	return &BTree{name: name, rootPageId: id}, nil
 }

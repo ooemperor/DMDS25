@@ -103,7 +103,7 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 			//TODO deserialize the page from disk
 			page, err := bm.deserialize(pageInFile)
 			if err != nil {
-				log.Fatalf("An error occured while deserializing: %v", err)
+				return 0, err
 			}
 			bm.Pages[i] = page
 			_ = bm.Close()
@@ -137,7 +137,7 @@ func (bm *BufferManager) deserialize(pageInFile uint64) (Page, error) {
 	}
 
 	if len(stringArray) != 13 {
-		return Page{}, errors.New("deserialization failed, the file does not contain 13 elements")
+		return Page{}, errors.New("deserialization failed, the row does not contain 13 elements")
 	}
 
 	// init the tmp arrays
