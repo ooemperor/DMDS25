@@ -36,7 +36,7 @@ type IBufferManager interface {
 	/*
 		pin a given page from the btree to memory
 	*/
-	Pin(fileID string, pageInFile uint64) (uint64, error)
+	Pin(fileID string) (uint64, error)
 
 	/*
 		unpin a given page from the btree to memory
@@ -88,6 +88,10 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	err = bm.Open(fileID)
+	if err != nil {
+		return 0, err
+	}
 	if bm.tmpFileData == nil {
 		return 0, errors.New("no tmpFileData found")
 	}
@@ -97,11 +101,12 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 			continue
 		} else {
 			//TODO deserialize the page from disk
-			page, err := bm.deserialize()
+			page, err := bm.deserialize(pageInFile)
 			if err != nil {
 				log.Fatalf("An error occured while deserializing: %v", err)
 			}
 			bm.Pages[i] = page
+			_ = bm.Close()
 			return i, nil
 		}
 	}
@@ -109,8 +114,9 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 }
 
 func (bm *BufferManager) Unpin(pageID uint64) error {
-	if bm.tmpFileData == nil {
-		return errors.New("no page to depin")
+
+	if reflect.DeepEqual(bm.Pages[pageID], Page{}) {
+		return errors.New("there is no page to depin at this Id")
 	}
 	bm.Pages[pageID] = Page{}
 	return nil
@@ -119,9 +125,10 @@ func (bm *BufferManager) Unpin(pageID uint64) error {
 /*
 deserialize the byte values currently present in the tmpFileData or throw an error
 */
-func (bm *BufferManager) deserialize() (Page, error) {
+func (bm *BufferManager) deserialize(pageInFile uint64) (Page, error) {
 
-	stringArray := strings.Split(string(bm.tmpFileData), ";")
+	pageRowString := strings.Split(string(bm.tmpFileData), "\n")[pageInFile]
+	stringArray := strings.Split(pageRowString, ";")
 
 	if bm.tmpFileData == nil || bm.openFileName == "" {
 		if len(stringArray) != 13 {
@@ -156,35 +163,48 @@ func (bm *BufferManager) deserialize() (Page, error) {
 			values[i] = 0
 		}
 	}
-	return Page{Keys: keys, Values: values, Name: bm.openFileName}, nil
+	return Page{Keys: keys, Values: values, pageId: pageInFile, Name: bm.openFileName}, nil
 }
 
 /*
-deserialize the byte values currently present in the tmpFileData or throw an error
+serialize the given page and write it to disk
 */
 func (bm *BufferManager) serialize(pageID uint64) error {
 	page := bm.Pages[pageID]
-
+	_ = bm.Open(bm.dir + page.Name)
 	var outputString string = ""
 
-	for i := 0; i < len(page.Keys); i++ {
-		if tmpKey := page.Keys[i]; tmpKey != 0 {
-			outputString = outputString + strconv.FormatUint(uint64(page.Keys[i]), 10)
-		}
-		outputString = outputString + ";"
-	}
+	pageRowStrings := strings.Split(string(bm.tmpFileData), "\n")
 
-	for i := 0; i < len(page.Values); i++ {
-		if tmpValue := page.Values[i]; tmpValue != 0 {
-			outputString = outputString + strconv.FormatUint(uint64(page.Keys[i]), 10)
+	for rowId := uint64(0); rowId < uint64(len(pageRowStrings)); rowId++ {
+		if pageID == rowId {
+			for i := 0; i < len(page.Keys); i++ {
+				if tmpKey := page.Keys[i]; tmpKey != 0 {
+					outputString = outputString + strconv.FormatUint(uint64(page.Keys[i]), 10)
+				}
+				outputString = outputString + ";"
+			}
+
+			for i := 0; i < len(page.Values); i++ {
+				if tmpValue := page.Values[i]; tmpValue != 0 {
+					outputString = outputString + strconv.FormatUint(uint64(page.Values[i]), 10)
+				}
+				outputString = outputString + ";"
+			}
+			outputString = outputString + "\n"
+		} else {
+			outputString = outputString + pageRowStrings[rowId] + "\n"
 		}
-		outputString = outputString + ";"
 	}
-	file, err := os.Open(bm.dir + page.Name)
+	_ = bm.Close()
+
+	file, err := os.OpenFile(bm.dir+page.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 777)
+
 	if err != nil {
 		log.Fatalf("An error occured while opening the file: %s", err)
 	}
-	err = file.Truncate(0)
+
+	err = os.Truncate(bm.dir+page.Name, 0)
 	if err != nil {
 		log.Fatalf("An error occured while truncating file: %s", err)
 	}
@@ -192,6 +212,8 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 	if err != nil {
 		log.Fatalf("An error occured while writing to file: %s", err)
 	}
+
+	_ = bm.Close()
 
 	_ = file.Close()
 	return nil

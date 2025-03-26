@@ -140,3 +140,55 @@ func TestIBufferManagerUnpinWithError(t *testing.T) {
 		t.Fatal("this should have returned an error but does not")
 	}
 }
+
+func TestIBufferManagerSerializeRootOnly(t *testing.T) {
+	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
+	file, _ := os.Create("./testFileForSerialize")
+	_, _ = file.Write([]byte("1;2;3;4;5;6;a;b;c;d;e;f;g"))
+	_ = file.Close()
+
+	defer func() {
+		_ = os.Remove("./testFileForSerialize")
+	}()
+
+	keys := [6]uint64{uint64(11), uint64(12), uint64(13), uint64(14), uint64(15), uint64(16)}
+	values := [7]uint64{uint64(21), uint64(22), uint64(23), uint64(24), uint64(25), uint64(26), uint64(27)}
+	page := Page{pageId: 0, Name: "testFileForSerialize", Keys: keys, Values: values}
+
+	myBuffer.Pages[0] = page
+
+	err := myBuffer.serialize(0)
+
+	if err != nil {
+		t.Fatalf("error while deserializing: %v", err)
+	}
+}
+
+func TestIBufferManagerSerializeTwoNodes(t *testing.T) {
+	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
+	file, _ := os.Create("./testFileForSerializeTwoNodes")
+	_, _ = file.Write([]byte("1;2;3;4;5;6;a;b;c;d;e;f;g\n1;2;3;4;5;6;a;b;c;d;e;f;g"))
+	_ = file.Close()
+
+	defer func() {
+		_ = os.Remove("./testFileForSerializeTwoNodes")
+	}()
+
+	keys := [6]uint64{uint64(11), uint64(12), uint64(13), uint64(14), uint64(15), uint64(16)}
+	values := [7]uint64{uint64(21), uint64(22), uint64(23), uint64(24), uint64(25), uint64(26), uint64(27)}
+	page := Page{pageId: 0, Name: "testFileForSerializeTwoNodes", Keys: keys, Values: values}
+
+	myBuffer.Pages[0] = page
+	myBuffer.Pages[1] = page
+
+	err := myBuffer.serialize(0)
+
+	if err != nil {
+		t.Fatalf("error while deserializing page 0: %v", err)
+	}
+
+	err = myBuffer.serialize(1)
+	if err != nil {
+		t.Fatalf("error while deserializing page1: %v", err)
+	}
+}
