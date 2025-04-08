@@ -109,7 +109,7 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 			// page is not free
 			continue
 		} else if i == uint64(len(bm.Pages)-1) && !reflect.DeepEqual(bm.Pages[i], Page{}) {
-			return 0, errors.New("Buffer Manager is full!!")
+			return 0, errors.New("buffer manager is full")
 		} else {
 			//TODO deserialize the page from disk
 			page, err := bm.deserialize(pageInFile)
@@ -202,7 +202,7 @@ serialize the given page and write it to disk
 func (bm *BufferManager) serialize(pageID uint64) error {
 	page := bm.Pages[pageID]
 	_ = bm.Open(bm.dir + page.Name)
-	var outputString string = ""
+	var outputString = ""
 
 	pageRowStrings := strings.Split(string(bm.tmpFileData), "\n")
 

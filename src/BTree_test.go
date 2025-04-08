@@ -35,6 +35,10 @@ var MyBuffer2, _ = src.CreateNewBufferManager("./testFiles/", uint64(1024))
 var myLoader2 = src.Loader{}
 var tree2, _ = myLoader2.Load("tree2", MyBuffer2)
 
+var MyBuffer3, _ = src.CreateNewBufferManager("./testFiles/", uint64(1024))
+var myLoader3 = src.Loader{}
+var tree3, _ = myLoader3.Load("tree3", MyBuffer3)
+
 func TestBTreeSetup(t *testing.T) {
 	MyBuffer, err := src.CreateNewBufferManager("./testFiles/", uint64(1024))
 	if err != nil {
@@ -108,6 +112,13 @@ func TestBTree2Get21(t *testing.T) {
 	}
 }
 
+func TestBTree2GetNonExistentKey(t *testing.T) {
+	_, err := tree2.Get(100)
+	if err == nil {
+		t.Errorf("tree2.get(100) did not return an error %d", err)
+	}
+}
+
 func TestBTree2Get24(t *testing.T) {
 	result, err := tree2.Get(24)
 	if err != nil {
@@ -118,22 +129,35 @@ func TestBTree2Get24(t *testing.T) {
 	}
 }
 
-func TestIBTreeInsertAndFetch(t *testing.T) {
-	tree := &MockBTree{data: map[uint64]uint64{}}
-	err := tree.Push(1, 3)
-
+func TestBTreeInsertAndFetch(t *testing.T) {
+	result, err := tree3.Get(15)
 	if err != nil {
-		t.Errorf("tree.push(1, 3) return error %d", err)
+		t.Errorf("tree3.get(15) return error %d", err)
+	}
+	if result != 16 {
+		t.Errorf("tree3.get(15) returned %d instead of 16 before the insert of new value", result)
 	}
 
-	result, err := tree.Get(1)
+	err = tree3.Push(13, 14)
 
 	if err != nil {
-		t.Errorf("tree.get(1) return error %d", err)
+		t.Errorf("tree3.Push(13) return error %d", err)
 	}
 
-	if result != 3 {
-		t.Errorf("tree.get(1) returned %d instead of 3", result)
+	result, err = tree3.Get(15)
+	if err != nil {
+		t.Errorf("tree3.get(15) return error %d after insert of new value", err)
+	}
+	if result != 16 {
+		t.Errorf("tree3.get(15) returned %d instead of 16 after the insert of new value", result)
+	}
+
+	result, err = tree3.Get(13)
+	if err != nil {
+		t.Errorf("tree3.get(13) return error %d after its insert of new value", err)
+	}
+	if result != 25 {
+		t.Errorf("tree3.get(13) returned %d instead of 14 after the insert of new value", result)
 	}
 }
 
