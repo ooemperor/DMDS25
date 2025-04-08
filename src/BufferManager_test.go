@@ -178,6 +178,7 @@ func TestBufferManagerSerializeRootOnly(t *testing.T) {
 	page := Page{pageId: 0, Name: "testFileForSerialize", Keys: keys, Values: values}
 
 	myBuffer.Pages[0] = page
+	myBuffer.PageMap[0] = 0
 
 	err := myBuffer.serialize(0)
 
@@ -199,9 +200,12 @@ func TestBufferManagerSerializeTwoNodes(t *testing.T) {
 	keys := [6]uint64{uint64(11), uint64(12), uint64(13), uint64(14), uint64(15), uint64(16)}
 	values := [7]uint64{uint64(21), uint64(22), uint64(23), uint64(24), uint64(25), uint64(26), uint64(27)}
 	page := Page{pageId: 0, Name: "testFileForSerializeTwoNodes", Keys: keys, Values: values}
+	page1 := Page{pageId: 1, Name: "testFileForSerializeTwoNodes", Keys: keys, Values: values}
 
 	myBuffer.Pages[0] = page
-	myBuffer.Pages[1] = page
+	myBuffer.Pages[1] = page1
+	myBuffer.PageMap[0] = 0
+	myBuffer.PageMap[1] = 1
 
 	err := myBuffer.serialize(0)
 
