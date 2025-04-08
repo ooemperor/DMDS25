@@ -39,16 +39,71 @@ func TestIBTreeEmpty(t *testing.T) {
 	}
 }
 
-func TestIBTreeNonEmpty(t *testing.T) {
-	tree := &MockBTree{data: map[uint64]uint64{}}
-	tree.data[1] = 1
+var MyBuffer1, _ = src.CreateNewBufferManager("./testFiles/", uint64(1024))
+var myLoader1 = src.Loader{}
+var tree1, _ = myLoader1.Load("tree1", MyBuffer1)
 
-	result, err := tree.Get(1)
+var MyBuffer2, _ = src.CreateNewBufferManager("./testFiles/", uint64(1024))
+var myLoader2 = src.Loader{}
+var tree2, _ = myLoader2.Load("tree2", MyBuffer2)
+
+func TestBTree1Get1(t *testing.T) {
+	result, err := tree1.Get(1)
 	if err != nil {
 		t.Errorf("tree.get(1) return error %d", err)
 	}
-	if result != 1 {
-		t.Errorf("tree.get(1) returned %d instead of 0", result)
+	if result != 2 {
+		t.Errorf("tree.get(1) returned %d instead of 2", result)
+	}
+}
+
+func TestBTree1Get11(t *testing.T) {
+	result, err := tree1.Get(11)
+	if err != nil {
+		t.Errorf("tree.get(11) return error %d", err)
+	}
+	if result != 12 {
+		t.Errorf("tree.get(1) returned %d instead of 12", result)
+	}
+}
+
+func TestBTree2Get1(t *testing.T) {
+	result, err := tree1.Get(1)
+	if err != nil {
+		t.Errorf("tree.get(1) return error %d", err)
+	}
+	if result != 2 {
+		t.Errorf("tree.get(1) returned %d instead of 2", result)
+	}
+}
+
+func TestBTree2Get11(t *testing.T) {
+	result, err := tree2.Get(11)
+	if err != nil {
+		t.Errorf("tree.get(11) return error %d", err)
+	}
+	if result != 12 {
+		t.Errorf("tree.get(1) returned %d instead of 12", result)
+	}
+}
+
+func TestBTree2Get21(t *testing.T) {
+	result, err := tree2.Get(21)
+	if err != nil {
+		t.Errorf("tree.get(11) return error %d", err)
+	}
+	if result != 22 {
+		t.Errorf("tree.get(1) returned %d instead of 22", result)
+	}
+}
+
+func TestBTree2Get24(t *testing.T) {
+	result, err := tree2.Get(24)
+	if err != nil {
+		t.Errorf("tree.get(24) return error %d", err)
+	}
+	if result != 25 {
+		t.Errorf("tree.get(24) returned %d instead of 25", result)
 	}
 }
 

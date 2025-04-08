@@ -2,7 +2,6 @@ package src
 
 import (
 	"errors"
-	"fmt"
 )
 
 /*
@@ -35,27 +34,33 @@ func (bm *BTree) Get(key uint64) (uint64, error) {
 
 func (bm *BTree) traverse(key uint64, currentLevel int, nextPageId uint64) (uint64, error) {
 	id, err := bm.Manager.Pin(bm.Name, nextPageId)
-	fmt.Printf("currentLevel is: %v\n", currentLevel)
-	fmt.Printf("nextPageid is: %v\n", nextPageId)
+
 	if err != nil {
 		return 0, err
 	}
+
 	page := bm.Manager.Pages[id]
+
 	for i := 0; i < len(page.Keys); i++ {
-		if key <= page.Keys[i] && i != len(page.Keys)-1 {
-			// go one key to the right
+		// i limit the pages to 1 level deep for the sake of simplicity
+		if currentLevel == 1 {
+			// we are on leave level so we can start to look for exact key
+			if key == page.Keys[i] {
+				return page.Values[i], nil
+			} else if key > page.Keys[i] {
+				continue
+			} else {
+				return 0, errors.New("key not found on leave level")
+			}
+		} else if i == len(page.Keys)-1 {
+			// we have reached the end of the keys, take the right most path down the tree
+			return bm.traverse(key, currentLevel+1, page.Values[i+1])
+		} else if key > page.Keys[i] && page.Keys[i] != 0 {
+			// go one key to the right since we have not reached the end yet
 			continue
 		} else {
-			// i limit the pages to 1 level deep for the sake of simplicity
-			if currentLevel == 1 {
-				if i == 0 {
-					return page.Values[i], nil
-				}
-				return page.Values[i-1], nil
-			} else {
-				// traverse into the next page
-				return bm.traverse(key, currentLevel+1, page.Values[i+1])
-			}
+			// traverse into the next page
+			return bm.traverse(key, currentLevel+1, page.Values[i])
 		}
 	}
 	return 0, errors.New("error in traversing")
