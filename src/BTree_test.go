@@ -10,16 +10,16 @@ type MockBTree struct {
 	data map[uint64]uint64
 }
 
-func (b MockBTree) get(key uint64) (uint64, error) {
+func (b MockBTree) Get(key uint64) (uint64, error) {
 	return b.data[key], nil
 }
 
-func (b MockBTree) push(key uint64, value uint64) error {
+func (b MockBTree) Push(key uint64, value uint64) error {
 	b.data[key] = value
 	return nil
 }
 
-func (b MockBTree) getRange(lowLimit uint64, highLimit uint64) (map[uint64]uint64, error) {
+func (b MockBTree) GetRange(lowLimit uint64, highLimit uint64) (map[uint64]uint64, error) {
 	myMap := make(map[uint64]uint64)
 	for i := lowLimit; i <= highLimit; i++ {
 		myMap[i] = b.data[i]
@@ -30,7 +30,7 @@ func (b MockBTree) getRange(lowLimit uint64, highLimit uint64) (map[uint64]uint6
 func TestIBTreeEmpty(t *testing.T) {
 	tree := &MockBTree{}
 
-	result, err := tree.get(1)
+	result, err := tree.Get(1)
 	if err != nil {
 		t.Errorf("tree.get(1) return error %d", err)
 	}
@@ -43,7 +43,7 @@ func TestIBTreeNonEmpty(t *testing.T) {
 	tree := &MockBTree{data: map[uint64]uint64{}}
 	tree.data[1] = 1
 
-	result, err := tree.get(1)
+	result, err := tree.Get(1)
 	if err != nil {
 		t.Errorf("tree.get(1) return error %d", err)
 	}
@@ -54,13 +54,13 @@ func TestIBTreeNonEmpty(t *testing.T) {
 
 func TestIBTreeInsertAndFetch(t *testing.T) {
 	tree := &MockBTree{data: map[uint64]uint64{}}
-	err := tree.push(1, 3)
+	err := tree.Push(1, 3)
 
 	if err != nil {
 		t.Errorf("tree.push(1, 3) return error %d", err)
 	}
 
-	result, err := tree.get(1)
+	result, err := tree.Get(1)
 
 	if err != nil {
 		t.Errorf("tree.get(1) return error %d", err)
@@ -75,23 +75,23 @@ func TestIBTreeInsertAndFetchRange(t *testing.T) {
 	tree := &MockBTree{data: map[uint64]uint64{}}
 
 	for i := 0; i < 5; i++ {
-		err := tree.push(uint64(i), uint64(i+1))
+		err := tree.Push(uint64(i), uint64(i+1))
 		if err != nil {
 			t.Errorf("tree.push(%d, %d) returned error %d", uint64(i), uint64(i+1), err)
 		}
 	}
 
-	result, err := tree.get(1)
+	result, err := tree.Get(1)
 
 	if err != nil {
-		t.Errorf("tree.get(1) return error %d", err)
+		t.Errorf("tree.Get(1) return error %d", err)
 	}
 
 	if result != 2 {
-		t.Errorf("tree.get(1) returned %d instead of 3", result)
+		t.Errorf("tree.Get(1) returned %d instead of 3", result)
 	}
 
-	rangeResult, rangeErr := tree.getRange(1, 2)
+	rangeResult, rangeErr := tree.GetRange(1, 2)
 	if rangeErr != nil {
 		t.Errorf("tree.getRange(1, 2) return error %d", rangeErr)
 	}

@@ -16,4 +16,7 @@ func main() {
 	fmt.Println(btree)
 	fmt.Println(myBuffer.Pages)
 	fmt.Println(myBuffer.Pages[btree.RootPageId])
+
+	res, _ := btree.Get(11)
+	fmt.Printf("result is: %v", res)
 }
