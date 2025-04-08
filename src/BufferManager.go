@@ -50,10 +50,12 @@ type BufferManager struct {
 	memory       uint64
 	tmpFileData  []byte
 	openFileName string
+	PageMap      map[uint64]uint64
 }
 
 func CreateNewBufferManager(dir string, memory uint64) (*BufferManager, error) {
-	return &(BufferManager{dir: dir, memory: memory}), nil
+	mapping := make(map[uint64]uint64)
+	return &(BufferManager{dir: dir, memory: memory, PageMap: mapping}), nil
 }
 
 func (bm *BufferManager) Open(fileID string) error {
@@ -107,6 +109,10 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 			}
 			bm.Pages[i] = page
 			_ = bm.Close()
+
+			// adding the page to the mapping
+			bm.PageMap[pageInFile] = i
+
 			return i, nil
 		}
 	}
@@ -119,7 +125,22 @@ func (bm *BufferManager) Unpin(pageID uint64) error {
 		return errors.New("there is no page to depin at this Id")
 	}
 	bm.Pages[pageID] = Page{}
+	err := bm.RemoveMapEntryByValue(pageID)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (bm *BufferManager) RemoveMapEntryByValue(value uint64) error {
+	for key, val := range bm.PageMap {
+		if val == value {
+			delete(bm.PageMap, key)
+			return nil
+		}
+	}
+	return errors.New("no page with this Id found to remove from map")
 }
 
 /*

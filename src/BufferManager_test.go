@@ -101,6 +101,10 @@ func TestIBufferManagerPin(t *testing.T) {
 		t.Fatal("Id is invalid")
 	}
 
+	if myBuffer.PageMap[uint64(0)] != id {
+		t.Fatal("PageMap has not been updated properly")
+	}
+
 	_ = os.Remove("./testFileForPin")
 }
 
@@ -119,8 +123,13 @@ func TestIBufferManagerUnpin(t *testing.T) {
 	_ = file.Close()
 
 	id, err := myBuffer.Pin("testFileForUnPin", uint64(0))
+
 	if err != nil {
 		t.Errorf("Error occured when trying to pin: %s", err)
+	}
+
+	if myBuffer.PageMap[uint64(0)] != id {
+		t.Fatalf("PageMap has not been updated properly, expected %v got %v", id, myBuffer.PageMap[uint64(0)])
 	}
 	_ = os.Remove("./testFileForUnPin")
 
@@ -128,6 +137,10 @@ func TestIBufferManagerUnpin(t *testing.T) {
 
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if len(myBuffer.PageMap) != 0 {
+		t.Fatalf("PageMap has not been updated properly with removed values, lenght is %v", len(myBuffer.PageMap))
 	}
 }
 

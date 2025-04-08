@@ -16,8 +16,9 @@ type IBTree interface {
 BTree is the type definition of a BTree and implements the get, push and getRange method of the above Interface
 */
 type BTree struct {
-	name       string //defines the filename of the BTree for loading
-	rootPageId uint64
+	Name       string //defines the filename of the BTree for loading
+	RootPageId uint64
+	Manager    *BufferManager
 }
 
 func (bm *BTree) get(key uint64) (uint64, error) {
