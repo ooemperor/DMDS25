@@ -156,7 +156,7 @@ func TestBTreeInsertAndFetch(t *testing.T) {
 	if err != nil {
 		t.Errorf("tree3.get(13) return error %d after its insert of new value", err)
 	}
-	if result != 25 {
+	if result != 14 {
 		t.Errorf("tree3.get(13) returned %d instead of 14 after the insert of new value", result)
 	}
 }

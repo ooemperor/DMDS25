@@ -2,6 +2,7 @@ package src
 
 import (
 	"errors"
+	"reflect"
 )
 
 /*
@@ -29,14 +30,15 @@ type BTree struct {
 Get fetches the value out of the index
 */
 func (bm *BTree) Get(key uint64) (uint64, error) {
-	return bm.traverse(key, 0, bm.RootPageId)
+	_, value, err := bm.traverse(key, 0, bm.RootPageId)
+	return value, err
 }
 
-func (bm *BTree) traverse(key uint64, currentLevel int, nextPageId uint64) (uint64, error) {
+func (bm *BTree) traverse(key uint64, currentLevel int, nextPageId uint64) (uint64, uint64, error) {
 	id, err := bm.Manager.Pin(bm.Name, nextPageId)
 
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	page := bm.Manager.Pages[id]
@@ -46,11 +48,11 @@ func (bm *BTree) traverse(key uint64, currentLevel int, nextPageId uint64) (uint
 		if currentLevel == 1 {
 			// we are on leave level so we can start to look for exact key
 			if key == page.Keys[i] {
-				return page.Values[i], nil
+				return id, page.Values[i], nil
 			} else if key > page.Keys[i] {
 				continue
 			} else {
-				return 0, errors.New("key not found on leave level")
+				return id, 0, errors.New("key not found on leave level")
 			}
 		} else if i == len(page.Keys)-1 {
 			// we have reached the end of the keys, take the right most path down the tree
@@ -63,10 +65,40 @@ func (bm *BTree) traverse(key uint64, currentLevel int, nextPageId uint64) (uint
 			return bm.traverse(key, currentLevel+1, page.Values[i])
 		}
 	}
-	return 0, errors.New("error in traversing")
+	return 0, 0, errors.New("error in traversing")
 }
 
 func (bm *BTree) Push(key uint64, value uint64) error {
+	// traverse down to the node
+	pageId, _, err := bm.traverse(key, 0, bm.RootPageId)
+
+	if err != nil && !reflect.DeepEqual(err, errors.New("key not found on leave level")) {
+		// traverse will give that error back, but we use it as a return for that we want to see for now
+		return err
+	}
+
+	// insert the new value
+	page := bm.Manager.Pages[pageId]
+
+	// we have fetched the page.
+	for i := 0; i < len(page.Keys); i++ {
+		if key > page.Keys[i] {
+			continue
+		} else if key < page.Keys[i] {
+			// do the insert now
+			for j := len(page.Keys) - 1; j > i; j-- {
+				// move all the entries over
+				page.Keys[j] = page.Keys[j-1]
+				page.Values[j] = page.Values[j-1]
+			}
+			page.Keys[i] = key
+			page.Values[i] = value
+			break
+		}
+	}
+
+	bm.Manager.Pages[pageId] = page
+
 	return nil
 }
 
