@@ -23,7 +23,7 @@ func TestLoaderSetup(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error loading file: %v", err)
 	}
-	expectedBTree := &BTree{name: "./testFileForLoader", rootPageId: 0}
+	expectedBTree := &BTree{Name: "./testFileForLoader", RootPageId: 0, Manager: myBuffer}
 	if !reflect.DeepEqual(tree, expectedBTree) {
 		t.Errorf("loaded tree does not match expected tree")
 	}

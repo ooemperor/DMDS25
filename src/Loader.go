@@ -11,5 +11,5 @@ func (l *Loader) Load(name string, manager *BufferManager) (*BTree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &BTree{name: name, rootPageId: id}, nil
+	return &BTree{Name: name, RootPageId: id, Manager: manager}, nil
 }

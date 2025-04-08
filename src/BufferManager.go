@@ -50,10 +50,12 @@ type BufferManager struct {
 	memory       uint64
 	tmpFileData  []byte
 	openFileName string
+	PageMap      map[uint64]uint64 // key is pageInFile, value is pageID in Buffer Manager
 }
 
 func CreateNewBufferManager(dir string, memory uint64) (*BufferManager, error) {
-	return &(BufferManager{dir: dir, memory: memory}), nil
+	mapping := make(map[uint64]uint64)
+	return &(BufferManager{dir: dir, memory: memory, PageMap: mapping}), nil
 }
 
 func (bm *BufferManager) Open(fileID string) error {
@@ -84,6 +86,12 @@ func (bm *BufferManager) Delete(fileID string) error {
 }
 
 func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
+
+	for key, value := range bm.PageMap {
+		if key == pageInFile {
+			return value, nil
+		}
+	}
 	err := bm.Open(fileID)
 	if err != nil {
 		return 0, err
@@ -98,7 +106,10 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 
 	for i := uint64(0); i < uint64(len(bm.Pages)); i++ {
 		if !reflect.DeepEqual(bm.Pages[i], Page{}) {
+			// page is not free
 			continue
+		} else if i == uint64(len(bm.Pages)-1) && !reflect.DeepEqual(bm.Pages[i], Page{}) {
+			return 0, errors.New("buffer manager is full")
 		} else {
 			//TODO deserialize the page from disk
 			page, err := bm.deserialize(pageInFile)
@@ -107,6 +118,10 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 			}
 			bm.Pages[i] = page
 			_ = bm.Close()
+
+			// adding the page to the mapping
+			bm.PageMap[pageInFile] = i
+
 			return i, nil
 		}
 	}
@@ -119,7 +134,31 @@ func (bm *BufferManager) Unpin(pageID uint64) error {
 		return errors.New("there is no page to depin at this Id")
 	}
 	bm.Pages[pageID] = Page{}
+	err := bm.RemoveMapEntryByValue(pageID)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (bm *BufferManager) RemoveMapEntryByValue(value uint64) error {
+	for key, val := range bm.PageMap {
+		if val == value {
+			delete(bm.PageMap, key)
+			return nil
+		}
+	}
+	return errors.New("no page with this Id found to remove from map")
+}
+
+func (bm *BufferManager) GetMapEntryKeyByValue(value uint64) (uint64, error) {
+	for key, val := range bm.PageMap {
+		if val == value {
+			return key, nil
+		}
+	}
+	return 0, errors.New("no page with this Id found to remove from map")
 }
 
 /*
@@ -172,12 +211,16 @@ serialize the given page and write it to disk
 func (bm *BufferManager) serialize(pageID uint64) error {
 	page := bm.Pages[pageID]
 	_ = bm.Open(bm.dir + page.Name)
-	var outputString string = ""
+	var outputString = ""
 
 	pageRowStrings := strings.Split(string(bm.tmpFileData), "\n")
 
 	for rowId := uint64(0); rowId < uint64(len(pageRowStrings)); rowId++ {
-		if pageID == rowId {
+		pageInFile, err := bm.GetMapEntryKeyByValue(pageID)
+		if err != nil {
+			return err
+		}
+		if pageInFile == rowId {
 			for i := 0; i < len(page.Keys); i++ {
 				if tmpKey := page.Keys[i]; tmpKey != 0 {
 					outputString = outputString + strconv.FormatUint(uint64(page.Keys[i]), 10)
@@ -189,6 +232,9 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 				if tmpValue := page.Values[i]; tmpValue != 0 {
 					outputString = outputString + strconv.FormatUint(uint64(page.Values[i]), 10)
 				}
+				if i == len(page.Values)-1 {
+					break
+				}
 				outputString = outputString + ";"
 			}
 			outputString = outputString + "\n"
@@ -197,6 +243,7 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 		}
 	}
 	_ = bm.Close()
+	outputString = strings.TrimSuffix(outputString, "\n")
 
 	file, err := os.OpenFile(bm.dir+page.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 777)
 
@@ -216,5 +263,20 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 	_ = bm.Close()
 
 	_ = file.Close()
+	return nil
+}
+
+/*
+Flush writes everthing to disk
+*/
+func (bm *BufferManager) Flush() error {
+	for _, pageID := range bm.PageMap {
+		// key is the pageInFileId
+		// value is the pageId in the bm.Pages
+		err := bm.serialize(pageID)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
