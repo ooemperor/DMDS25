@@ -27,18 +27,6 @@ func (b MockBTree) GetRange(lowLimit uint64, highLimit uint64) (map[uint64]uint6
 	return myMap, nil
 }
 
-func TestIBTreeEmpty(t *testing.T) {
-	tree := &MockBTree{}
-
-	result, err := tree.Get(1)
-	if err != nil {
-		t.Errorf("tree.get(1) return error %d", err)
-	}
-	if result != 0 {
-		t.Errorf("tree.get(1) returned %d instead of 0", result)
-	}
-}
-
 var MyBuffer1, _ = src.CreateNewBufferManager("./testFiles/", uint64(1024))
 var myLoader1 = src.Loader{}
 var tree1, _ = myLoader1.Load("tree1", MyBuffer1)
@@ -47,63 +35,86 @@ var MyBuffer2, _ = src.CreateNewBufferManager("./testFiles/", uint64(1024))
 var myLoader2 = src.Loader{}
 var tree2, _ = myLoader2.Load("tree2", MyBuffer2)
 
+func TestBTreeSetup(t *testing.T) {
+	MyBuffer, err := src.CreateNewBufferManager("./testFiles/", uint64(1024))
+	if err != nil {
+		t.Fatalf("error while initializing BufferManager: %v", err)
+	}
+	myLoader := src.Loader{}
+	_, err = myLoader.Load("tree1", MyBuffer)
+
+	if err != nil {
+		t.Fatalf("error while loading tree with Loader: %v", err)
+	}
+}
+
 func TestBTree1Get1(t *testing.T) {
 	result, err := tree1.Get(1)
 	if err != nil {
-		t.Errorf("tree.get(1) return error %d", err)
+		t.Errorf("tree1.get(1) return error %d", err)
 	}
 	if result != 2 {
-		t.Errorf("tree.get(1) returned %d instead of 2", result)
+		t.Errorf("tree1.get(1) returned %d instead of 2", result)
 	}
 }
 
 func TestBTree1Get11(t *testing.T) {
 	result, err := tree1.Get(11)
 	if err != nil {
-		t.Errorf("tree.get(11) return error %d", err)
+		t.Errorf("tree1.get(11) return error %d", err)
 	}
 	if result != 12 {
-		t.Errorf("tree.get(1) returned %d instead of 12", result)
+		t.Errorf("tree1.get(11) returned %d instead of 12", result)
 	}
 }
 
 func TestBTree2Get1(t *testing.T) {
-	result, err := tree1.Get(1)
+	result, err := tree2.Get(1)
 	if err != nil {
-		t.Errorf("tree.get(1) return error %d", err)
+		t.Errorf("tree2.get(1) return error %d", err)
 	}
 	if result != 2 {
-		t.Errorf("tree.get(1) returned %d instead of 2", result)
+		t.Errorf("tree2.get(1) returned %d instead of 2", result)
 	}
 }
 
 func TestBTree2Get11(t *testing.T) {
 	result, err := tree2.Get(11)
 	if err != nil {
-		t.Errorf("tree.get(11) return error %d", err)
+		t.Errorf("tree2.get(11) return error %d", err)
 	}
 	if result != 12 {
-		t.Errorf("tree.get(1) returned %d instead of 12", result)
+		t.Errorf("tree2.get(11) returned %d instead of 12", result)
+	}
+}
+
+func TestBTree2Get15(t *testing.T) {
+	result, err := tree2.Get(15)
+	if err != nil {
+		t.Errorf("tree2.get(15) return error %d", err)
+	}
+	if result != 16 {
+		t.Errorf("tree2.get(15) returned %d instead of 16", result)
 	}
 }
 
 func TestBTree2Get21(t *testing.T) {
 	result, err := tree2.Get(21)
 	if err != nil {
-		t.Errorf("tree.get(11) return error %d", err)
+		t.Errorf("tree2.get(21) return error %d", err)
 	}
 	if result != 22 {
-		t.Errorf("tree.get(1) returned %d instead of 22", result)
+		t.Errorf("tree2.get(21) returned %d instead of 22", result)
 	}
 }
 
 func TestBTree2Get24(t *testing.T) {
 	result, err := tree2.Get(24)
 	if err != nil {
-		t.Errorf("tree.get(24) return error %d", err)
+		t.Errorf("tree2.get(24) return error %d", err)
 	}
 	if result != 25 {
-		t.Errorf("tree.get(24) returned %d instead of 25", result)
+		t.Errorf("tree2.get(24) returned %d instead of 25", result)
 	}
 }
 

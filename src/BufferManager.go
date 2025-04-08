@@ -86,6 +86,12 @@ func (bm *BufferManager) Delete(fileID string) error {
 }
 
 func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
+
+	for key, value := range bm.PageMap {
+		if key == pageInFile {
+			return value, nil
+		}
+	}
 	err := bm.Open(fileID)
 	if err != nil {
 		return 0, err
@@ -100,7 +106,10 @@ func (bm *BufferManager) Pin(fileID string, pageInFile uint64) (uint64, error) {
 
 	for i := uint64(0); i < uint64(len(bm.Pages)); i++ {
 		if !reflect.DeepEqual(bm.Pages[i], Page{}) {
+			// page is not free
 			continue
+		} else if i == uint64(len(bm.Pages)-1) && !reflect.DeepEqual(bm.Pages[i], Page{}) {
+			return 0, errors.New("Buffer Manager is full!!")
 		} else {
 			//TODO deserialize the page from disk
 			page, err := bm.deserialize(pageInFile)
