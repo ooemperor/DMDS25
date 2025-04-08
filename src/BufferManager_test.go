@@ -6,9 +6,9 @@ import (
 )
 
 /*
-TestIBufferManagerSetup tests if the setup function works as expected or not.
+TestBufferManagerSetup tests if the setup function works as expected or not.
 */
-func TestIBufferManagerSetup(t *testing.T) {
+func TestBufferManagerSetup(t *testing.T) {
 	var _, err = CreateNewBufferManager("./", uint64(1024))
 	if err != nil {
 		t.Fatal(err)
@@ -16,9 +16,9 @@ func TestIBufferManagerSetup(t *testing.T) {
 }
 
 /*
-TestIBufferManagerOpen Checks if we can open a file that exists without an error
+TestBufferManagerOpen Checks if we can open a file that exists without an error
 */
-func TestIBufferManagerOpen(t *testing.T) {
+func TestBufferManagerOpen(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	file, err := os.Create("./testFile")
 	_ = file.Close()
@@ -33,9 +33,9 @@ func TestIBufferManagerOpen(t *testing.T) {
 }
 
 /*
-TestIBufferManagerOpenWithError checks that an error is raised when a non existant file is tried to open
+TestBufferManagerOpenWithError checks that an error is raised when a non existant file is tried to open
 */
-func TestIBufferManagerOpenWithError(t *testing.T) {
+func TestBufferManagerOpenWithError(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	err := myBuffer.Open("testFileNonExistent")
 	if err == nil {
@@ -44,9 +44,9 @@ func TestIBufferManagerOpenWithError(t *testing.T) {
 }
 
 /*
-TestIBufferManagerClose tests if we can close an open file properly
+TestBufferManagerClose tests if we can close an open file properly
 */
-func TestIBufferManagerClose(t *testing.T) {
+func TestBufferManagerClose(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	file, err := os.Create("./testFileForClose")
 	_ = file.Close()
@@ -61,9 +61,9 @@ func TestIBufferManagerClose(t *testing.T) {
 }
 
 /*
-TestIBufferManagerDelete tests if we receive an expected error when closing a page that is not open
+TestBufferManagerDelete tests if we receive an expected error when closing a page that is not open
 */
-func TestIBufferManagerDelete(t *testing.T) {
+func TestBufferManagerDelete(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	file, err := os.Create("./testFileForDelete")
 	_ = file.Close()
@@ -77,9 +77,9 @@ func TestIBufferManagerDelete(t *testing.T) {
 }
 
 /*
-TestIBufferManagerDeleteWithError tests if we receive an expected error when closing a page that is not open
+TestBufferManagerDeleteWithError tests if we receive an expected error when closing a page that is not open
 */
-func TestIBufferManagerDeleteWithError(t *testing.T) {
+func TestBufferManagerDeleteWithError(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	err := myBuffer.Delete("testFileForDeleteNonExistent")
 	if err == nil {
@@ -87,7 +87,10 @@ func TestIBufferManagerDeleteWithError(t *testing.T) {
 	}
 }
 
-func TestIBufferManagerPin(t *testing.T) {
+/*
+TestBufferManagerPin tests if the pinning of a page works correctly or not
+*/
+func TestBufferManagerPin(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	file, _ := os.Create("./testFileForPin")
 	_, _ = file.Write([]byte("1;2;3;4;5;6;a;b;c;d;e;f;g"))
@@ -108,7 +111,10 @@ func TestIBufferManagerPin(t *testing.T) {
 	_ = os.Remove("./testFileForPin")
 }
 
-func TestIBufferManagerPinWithError(t *testing.T) {
+/*
+TestBufferManagerPinWithError tests that the ping successfully return error when expected
+*/
+func TestBufferManagerPinWithError(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	_, err := myBuffer.Pin("testFileForPinNonExistent", uint64(0))
 	if err == nil {
@@ -116,7 +122,10 @@ func TestIBufferManagerPinWithError(t *testing.T) {
 	}
 }
 
-func TestIBufferManagerUnpin(t *testing.T) {
+/*
+TestBufferManagerPin tests if the unpinning of a page works correctly or not
+*/
+func TestBufferManagerUnpin(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	file, _ := os.Create("./testFileForUnPin")
 	_, _ = file.Write([]byte("1;2;3;4;5;6;a;b;c;d;e;f;g"))
@@ -144,7 +153,7 @@ func TestIBufferManagerUnpin(t *testing.T) {
 	}
 }
 
-func TestIBufferManagerUnpinWithError(t *testing.T) {
+func TestBufferManagerUnpinWithError(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	id, _ := myBuffer.Pin("testFileForUnPinNonExistent", uint64(0))
 
@@ -154,7 +163,7 @@ func TestIBufferManagerUnpinWithError(t *testing.T) {
 	}
 }
 
-func TestIBufferManagerSerializeRootOnly(t *testing.T) {
+func TestBufferManagerSerializeRootOnly(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	file, _ := os.Create("./testFileForSerialize")
 	_, _ = file.Write([]byte("1;2;3;4;5;6;a;b;c;d;e;f;g"))
@@ -177,7 +186,7 @@ func TestIBufferManagerSerializeRootOnly(t *testing.T) {
 	}
 }
 
-func TestIBufferManagerSerializeTwoNodes(t *testing.T) {
+func TestBufferManagerSerializeTwoNodes(t *testing.T) {
 	var myBuffer, _ = CreateNewBufferManager("./", uint64(1024))
 	file, _ := os.Create("./testFileForSerializeTwoNodes")
 	_, _ = file.Write([]byte("1;2;3;4;5;6;a;b;c;d;e;f;g\n1;2;3;4;5;6;a;b;c;d;e;f;g"))
