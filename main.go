@@ -13,17 +13,11 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(btree)
-	fmt.Println(myBuffer.Pages)
-	fmt.Println(myBuffer.Pages[btree.RootPageId])
 
 	res, _ := btree.Get(11)
 	fmt.Printf("result is: %v\n", res)
-	_ = btree.Push(13, 14)
-
-	res, _ = btree.Get(13)
+	err = btree.Push(13, 14)
+	res, err = btree.Get(13)
 	fmt.Printf("result is: %v\n", res)
-
-	fmt.Println(btree.Manager.Pages)
 	_ = btree.Manager.Flush()
 }

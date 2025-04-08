@@ -44,11 +44,14 @@ func (bm *BTree) traverse(key uint64, currentLevel int, nextPageId uint64) (uint
 	page := bm.Manager.Pages[id]
 
 	for i := 0; i < len(page.Keys); i++ {
+		//fmt.Println(nextPageId)
 		// i limit the pages to 1 level deep for the sake of simplicity
 		if currentLevel == 1 {
 			// we are on leave level so we can start to look for exact key
 			if key == page.Keys[i] {
 				return id, page.Values[i], nil
+			} else if key > page.Keys[i] && page.Keys[i] == 0 {
+				return id, 0, errors.New("key not found on leave level")
 			} else if key > page.Keys[i] {
 				continue
 			} else {
@@ -82,9 +85,7 @@ func (bm *BTree) Push(key uint64, value uint64) error {
 
 	// we have fetched the page.
 	for i := 0; i < len(page.Keys); i++ {
-		if key > page.Keys[i] {
-			continue
-		} else if key < page.Keys[i] {
+		if key < page.Keys[i] || page.Keys[i] == 0 {
 			// do the insert now
 			for j := len(page.Keys) - 1; j > i; j-- {
 				// move all the entries over
@@ -94,9 +95,12 @@ func (bm *BTree) Push(key uint64, value uint64) error {
 			page.Keys[i] = key
 			page.Values[i] = value
 			break
+		} else if key == page.Keys[i] {
+			return errors.New("key already present on leave level, cannot insert into tree")
+		} else if key > page.Keys[i] {
+			continue
 		}
 	}
-
 	bm.Manager.Pages[pageId] = page
 
 	return nil

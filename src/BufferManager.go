@@ -243,6 +243,7 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 		}
 	}
 	_ = bm.Close()
+	outputString = strings.TrimSuffix(outputString, "\n")
 
 	file, err := os.OpenFile(bm.dir+page.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 777)
 
