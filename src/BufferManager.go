@@ -50,7 +50,7 @@ type BufferManager struct {
 	memory       uint64
 	tmpFileData  []byte
 	openFileName string
-	PageMap      map[uint64]uint64
+	PageMap      map[uint64]uint64 // key is pageInFile, value is pageID in Buffer Manager
 }
 
 func CreateNewBufferManager(dir string, memory uint64) (*BufferManager, error) {
@@ -152,6 +152,15 @@ func (bm *BufferManager) RemoveMapEntryByValue(value uint64) error {
 	return errors.New("no page with this Id found to remove from map")
 }
 
+func (bm *BufferManager) GetMapEntryKeyByValue(value uint64) (uint64, error) {
+	for key, val := range bm.PageMap {
+		if val == value {
+			return key, nil
+		}
+	}
+	return 0, errors.New("no page with this Id found to remove from map")
+}
+
 /*
 deserialize the byte values currently present in the tmpFileData or throw an error
 */
@@ -207,7 +216,11 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 	pageRowStrings := strings.Split(string(bm.tmpFileData), "\n")
 
 	for rowId := uint64(0); rowId < uint64(len(pageRowStrings)); rowId++ {
-		if pageID == rowId {
+		pageInFile, err := bm.GetMapEntryKeyByValue(pageID)
+		if err != nil {
+			return err
+		}
+		if pageInFile == rowId {
 			for i := 0; i < len(page.Keys); i++ {
 				if tmpKey := page.Keys[i]; tmpKey != 0 {
 					outputString = outputString + strconv.FormatUint(uint64(page.Keys[i]), 10)
@@ -218,6 +231,9 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 			for i := 0; i < len(page.Values); i++ {
 				if tmpValue := page.Values[i]; tmpValue != 0 {
 					outputString = outputString + strconv.FormatUint(uint64(page.Values[i]), 10)
+				}
+				if i == len(page.Values)-1 {
+					break
 				}
 				outputString = outputString + ";"
 			}
@@ -246,5 +262,20 @@ func (bm *BufferManager) serialize(pageID uint64) error {
 	_ = bm.Close()
 
 	_ = file.Close()
+	return nil
+}
+
+/*
+Flush writes everthing to disk
+*/
+func (bm *BufferManager) Flush() error {
+	for _, pageID := range bm.PageMap {
+		// key is the pageInFileId
+		// value is the pageId in the bm.Pages
+		err := bm.serialize(pageID)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

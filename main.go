@@ -18,5 +18,12 @@ func main() {
 	fmt.Println(myBuffer.Pages[btree.RootPageId])
 
 	res, _ := btree.Get(11)
-	fmt.Printf("result is: %v", res)
+	fmt.Printf("result is: %v\n", res)
+	_ = btree.Push(13, 14)
+
+	res, _ = btree.Get(13)
+	fmt.Printf("result is: %v\n", res)
+
+	fmt.Println(btree.Manager.Pages)
+	_ = btree.Manager.Flush()
 }
